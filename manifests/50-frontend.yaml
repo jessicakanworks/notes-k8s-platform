@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: frontend-html, namespace: notes}
+data:
+  index.html: |
+    <!doctype html><html><body><h1>Notes</h1><ul id="n"></ul>
+    <script>fetch('/api/notes').then(r=>r.json()).then(d=>{for(const x of d){const li=document.createElement('li');li.textContent=x.title+' — '+x.body;n.appendChild(li)}})</script>
+    </body></html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: frontend, namespace: notes}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: frontend}}
+  template:
+    metadata: {labels: {app: frontend}}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{containerPort: 80}]
+          volumeMounts: [{name: html, mountPath: /usr/share/nginx/html}]
+          resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {memory: 64Mi}}
+      volumes: [{name: html, configMap: {name: frontend-html}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: frontend, namespace: notes}
+spec: {selector: {app: frontend}, ports: [{port: 80}]}

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: api, namespace: notes}
+spec:
+  replicas: 2
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
+  selector: {matchLabels: {app: api}}
+  template:
+    metadata: {labels: {app: api}}
+    spec:
+      containers:
+        - name: api
+          image: docker.io/CHANGEME/notes-app:1.0.0
+          ports: [{containerPort: 8000}]
+          envFrom: [{configMapRef: {name: notes-config}}]
+          env:
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: notes-secret, key: POSTGRES_PASSWORD}}}
+            - {name: DATABASE_URL, value: "postgresql://$(DB_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):5432/$(DB_NAME)"}
+          readinessProbe: {httpGet: {path: /healthz, port: 8000}, initialDelaySeconds: 5}
+          livenessProbe: {httpGet: {path: /healthz, port: 8000}, initialDelaySeconds: 20, periodSeconds: 15}
+          resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {runAsNonRoot: true, allowPrivilegeEscalation: false}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: api, namespace: notes}
+spec: {selector: {app: api}, ports: [{port: 80, targetPort: 8000}]}

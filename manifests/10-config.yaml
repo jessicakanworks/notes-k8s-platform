@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: notes-config, namespace: notes}
+data:
+  REDIS_URL: redis://redis:6379/0
+  DB_HOST: postgres
+  DB_NAME: notes
+  DB_USER: notes
+---
+apiVersion: v1
+kind: Secret
+metadata: {name: notes-secret, namespace: notes}
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: change-me-in-real-clusters   # use sealed-secrets / external-secrets in prod

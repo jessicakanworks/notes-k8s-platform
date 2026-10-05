@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata: {name: postgres, namespace: notes}
+spec:
+  clusterIP: None
+  selector: {app: postgres}
+  ports: [{port: 5432}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: postgres, namespace: notes}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata: {labels: {app: postgres}}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{containerPort: 5432}]
+          env:
+            - {name: POSTGRES_DB, valueFrom: {configMapKeyRef: {name: notes-config, key: DB_NAME}}}
+            - {name: POSTGRES_USER, valueFrom: {configMapKeyRef: {name: notes-config, key: DB_USER}}}
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: notes-secret, key: POSTGRES_PASSWORD}}}
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+          readinessProbe: {exec: {command: ["pg_isready", "-U", "notes"]}, periodSeconds: 10}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {memory: 1Gi}}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 5Gi}}}

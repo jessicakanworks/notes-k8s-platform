@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notes
+  namespace: notes
+  annotations: {nginx.ingress.kubernetes.io/rewrite-target: /$2}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: notes.local
+      http:
+        paths:
+          - {path: /api(/|$)(.*), pathType: ImplementationSpecific, backend: {service: {name: api, port: {number: 80}}}}
+          - {path: /()(.*), pathType: ImplementationSpecific, backend: {service: {name: frontend, port: {number: 80}}}}

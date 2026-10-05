@@ -1,0 +1,7 @@
+api:
+  image: {repository: docker.io/CHANGEME/notes-app, tag: "1.0.0"}
+  replicas: 2
+  resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: 500m, memory: 256Mi}}
+frontend: {replicas: 2}
+postgres: {storage: 5Gi, password: change-me}
+ingress: {enabled: true, host: notes.local, className: nginx}
